@@ -4,3 +4,9 @@
 .Ruserdata
 
 *.Rproj
+
+cache/cacheOutputs/
+
+inputs/
+
+cache/
