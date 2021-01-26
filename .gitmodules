@@ -1,0 +1,27 @@
+[submodule "Biomass_core"]
+	path = Biomass_core
+	url = https://github.com/PredictiveEcology/Biomass_core.git
+[submodule "Biomass_borealDataPrep"]
+	path = Biomass_borealDataPrep
+	url = https://github.com/PredictiveEcology/Biomass_borealDataPrep.git
+[submodule "Biomass_speciesData"]
+	path = Biomass_speciesData
+	url = https://github.com/PredictiveEcology/Biomass_speciesData.git
+[submodule "Biomass_speciesParameters"]
+	path = Biomass_speciesParameters
+	url = https://github.com/PredictiveEcology/Biomass_speciesParameters.git
+[submodule "scfm"]
+	path = scfm
+	url = https://github.com/PredictiveEcology/scfm.git
+[submodule "gmcsDataPrep"]
+	path = gmcsDataPrep
+	url = https://github.com/ianmseddy/gmcsDataPrep.git
+[submodule "PSP_Clean"]
+	path = PSP_Clean
+	url = https://github.com/ianmseddy/PSP_Clean.git
+[submodule "Biomass_regeneration"]
+	path = Biomass_regeneration
+	url = https://github.com/PredictiveEcology/Biomass_regeneration.git
+[submodule "LandR_reforestation"]
+	path = LandR_reforestation
+	url = https://github.com/ianmseddy/LandR_reforestation.git
