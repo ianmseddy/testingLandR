@@ -1,19 +1,20 @@
 library(data.table)
 library(raster)
 library(sf)
-library(SpaDES.core)
+library(SpaDES)
 library(reproducible)
 library(LandR)
 
 
 googledrive::drive_auth("ianmseddy@gmail.com")
 
-setPaths(inputPath = 'inputs',
+
+paths <- list(inputPath = 'inputs',
          outputPath = 'outputs',
          cachePath = 'cache',
          modulePath = 'modules') #I set this up wrong
 
-paths <- getPaths()
+do.call(setPaths, paths)
 
 studyArea <- prepInputs(url = 'https://drive.google.com/file/d/16dHisi-dM3ryJTazFHSQlqljVc0McThk/view?usp=sharing',
                         destinationPath = paths$inputPath,
@@ -27,7 +28,7 @@ studyArea$studyAreaName <- 'FtStJohn'
 studyAreaLarge <- buffer(studyArea, 100000) #note if you supply RTM or SA, you must supply all 4 to Biomass_speciesData
 studyAreaLarge$studyAreaName <- "buffFtStJohn" #make into spdf from sp
 
-rtml <- Cache(, prepInputs, url = paste0("http://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
+rtml <- Cache(prepInputs, url = paste0("http://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
                                          "canada-forests-attributes_attributs-forests-canada/",
                                          "2001-attributes_attributs-2001/",
                                          "NFI_MODIS250m_2001_kNN_Structure_Biomass_TotalLiveAboveGround_v1.tif"),
@@ -54,26 +55,25 @@ thlb <- mask(thlb, studyArea)
 sppEquiv <- sppEquiv[!LANDIS_traits == "PINU.CON.CON"]
 sppEquiv
 sppColors <- LandR::sppColors(sppEquiv, sppEquivCol = "LandR", palette = "Accent", newVals = 'Mixed')
-
+studyAreaName <- 'FtStJohn'
 dataParams <- list(
   Biomass_speciesData = list(
     .useCache = 'overwrite',
-    sppEquivCol = "LandR"
+    sppEquivCol = "LandR",
+    .studyAreaName = studyAreaName
     # demoMode = TRUE
   ),
   Biomass_borealDataPrep = list(
     sppEquivCol = "LandR",
+    .studyAreaName = studyAreaName,
     speciesTableAreas = c("MC", "BC", "BSE")
-  ),
-  # no traits for the Boreal Cordillera, Pice_gla missing from MC, PM full of bad estimates
-  Biomass_speciesParameters= list(
-    sppEquivCol = "LandR"
   ),
   Biomass_core = list(
     sppEquivCol = 'LandR',
     keepClimateCols = TRUE,
     successionTimestep = 1,
     .useCache = 'overwrite',
+    .studyAreaName = studyAreaName,
     .plotInitialTime = NA,
     growthAndMortalityDrivers = "LandR"
   )
@@ -91,13 +91,17 @@ dataObjects <- list(
 
 outputs <- data.frame(objectName = "rstCurrentHarvest", saveTime = 2011:2021, eventPriority = 10)
 
-dataTest <- Cache(simInit,
-                  times = list(start = 2011, end = 2021),
-                  modules = dataModules,
-                  outputs = outputs,
-                  useCache = 'overwrite',
-                  objects = dataObjects,
-                  params = dataParams)
+dataTest <- simInit(
+  times = list(start = 2011, end = 2021),
+  modules = dataModules,
+  outputs = outputs,
+  objects = dataObjects,
+  params = dataParams)
 
 dataOut <- spades(dataTest)
 
+outHarvest <- list.files(outputPath(dataOut), pattern = "rstCurrentHarvest*", full.names = TRUE) %>%
+  lapply(., readRDS) %>%
+  raster::stack(.) %>%
+  raster::calc(fun = sum)
+plot(outHarvest)
