@@ -1,8 +1,10 @@
-
+library(data.table)
+library(raster)
+library(sf)
+library(SpaDES.core)
 library(reproducible)
 library(LandR)
-library(raster)
-library(SpaDES)
+
 
 googledrive::drive_auth("ianmseddy@gmail.com")
 
@@ -20,24 +22,37 @@ studyArea <- prepInputs(url = 'https://drive.google.com/file/d/16dHisi-dM3ryJTaz
 studyArea <- rgeos::gUnaryUnion(studyArea)
 studyArea$studyAreaName <- 'FtStJohn'
 
-rtm <- prepInputsLCC(destinationPath = paths$inputPath,
-                               studyArea = studyArea)
 #cache bug work around for now
-rtm <- setValues(raster(rtm), getValues(rtm))
 
 studyAreaLarge <- buffer(studyArea, 100000) #note if you supply RTM or SA, you must supply all 4 to Biomass_speciesData
-rtml <- prepInputsLCC(destinationPath = paths$inputPath, studyArea = studyAreaLarge)
+studyAreaLarge$studyAreaName <- "buffFtStJohn" #make into spdf from sp
 
-dataModules <- list("PSP_Clean", "Biomass_speciesData", "Biomass_borealDataPrep",
-                    "Biomass_speciesParameters", "gmcsDataPrep", "Biomass_core")
+rtml <- Cache(, prepInputs, url = paste0("http://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
+                                         "canada-forests-attributes_attributs-forests-canada/",
+                                         "2001-attributes_attributs-2001/",
+                                         "NFI_MODIS250m_2001_kNN_Structure_Biomass_TotalLiveAboveGround_v1.tif"),
+              destinationPath = paths$inputPath,
+              studyArea = studyAreaLarge)
+studyAreaLarge <- spTransform(studyAreaLarge, CRSobj = crs(rtml))
+rtm <- postProcess(rtml, studyArea = studyArea)
+studyArea <- spTransform(studyArea, CRSobj = crs(rtm))
+
+
+dataModules <- list("Biomass_speciesData", "Biomass_borealDataPrep",
+                    "Biomass_core", "simpleHarvest")
 
 sppEquiv <- LandR::sppEquivalencies_CA
 sppEquiv <- sppEquiv[LandR %in% c("Popu_tre", "Betu_pap",
                                   "Pinu_con", "Pice_mar",
                                   "Pice_gla", "Pice_eng",
                                   "Abie_las"),]
+thlb <- setValues(rtm, values = sample(x = c(0,1), size = ncell(rtm), replace = TRUE))
+thlb <- mask(thlb, studyArea)
+#make sure non-forest isn't harvestable
+
 #Now we don't want Pinu_con_con
 sppEquiv <- sppEquiv[!LANDIS_traits == "PINU.CON.CON"]
+sppEquiv
 sppColors <- LandR::sppColors(sppEquiv, sppEquivCol = "LandR", palette = "Accent", newVals = 'Mixed')
 
 dataParams <- list(
@@ -69,12 +84,20 @@ dataObjects <- list(
   studyAreaLarge = studyAreaLarge,
   rasterToMatch = rtm,
   rasterToMatchLarge = rtml,
-  sppEquiv = sppEquiv
-  , sppColorVect = sppColors
+  sppEquiv = sppEquiv,
+  sppColorVect = sppColors,
+  thlb = thlb
 )
-devtools::load_all("../LandR")
-dataTest <- simInit(times = list(start = 2011, end = 2012),
-                    modules = dataModules,
-                    objects = dataObjects,
-                    params = dataParams)
+
+outputs <- data.frame(objectName = "rstCurrentHarvest", saveTime = 2011:2021, eventPriority = 10)
+
+dataTest <- Cache(simInit,
+                  times = list(start = 2011, end = 2021),
+                  modules = dataModules,
+                  outputs = outputs,
+                  useCache = 'overwrite',
+                  objects = dataObjects,
+                  params = dataParams)
+
 dataOut <- spades(dataTest)
+
