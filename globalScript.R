@@ -40,7 +40,7 @@ studyArea <- spTransform(studyArea, CRSobj = crs(rtm))
 
 
 dataModules <- list("Biomass_speciesData", "Biomass_borealDataPrep",
-                    "Biomass_core", "simpleHarvest")
+                    "Biomass_core", "simpleHarvest", "LandR_reforestation")
 
 sppEquiv <- LandR::sppEquivalencies_CA
 sppEquiv <- sppEquiv[LandR %in% c("Popu_tre", "Betu_pap",
@@ -71,12 +71,13 @@ dataParams <- list(
   Biomass_core = list(
     sppEquivCol = 'LandR',
     keepClimateCols = TRUE,
-    successionTimestep = 1,
+    successionTimestep = 10,
     .useCache = 'overwrite',
     .studyAreaName = studyAreaName,
     .plotInitialTime = NA,
     growthAndMortalityDrivers = "LandR"
-  )
+  ),
+  LandR_reforestation = list()
 )
 
 dataObjects <- list(
@@ -91,17 +92,23 @@ dataObjects <- list(
 
 outputs <- data.frame(objectName = "rstCurrentHarvest", saveTime = 2011:2021, eventPriority = 10)
 
-dataTest <- simInit(
+mySim <- simInit(
   times = list(start = 2011, end = 2021),
   modules = dataModules,
   outputs = outputs,
   objects = dataObjects,
   params = dataParams)
 
-dataOut <- spades(dataTest)
+mySimOut <- spades(mySim)
 
-outHarvest <- list.files(outputPath(dataOut), pattern = "rstCurrentHarvest*", full.names = TRUE) %>%
+
+outHarvest <- list.files(outputPath(mySimOut), pattern = "rstCurrentHarvest*", full.names = TRUE) %>%
   lapply(., readRDS) %>%
-  raster::stack(.) %>%
-  raster::calc(fun = sum)
-plot(outHarvest)
+  raster::stack(.)
+
+#test that harvest does not occur twice
+d <- as.data.table(getValues(outHarvest))
+d <- na.omit(d)
+d[, rowSum := rowSums(.SD, na.rm = TRUE), .SDcol = colnames(d)]
+summary(d)
+

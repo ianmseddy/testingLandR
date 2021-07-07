@@ -28,3 +28,6 @@
 [submodule "modules/simpleHarvest"]
 	path = modules/simpleHarvest
 	url = git@github.com:ianmseddy/simpleHarvest.git
+[submodule "git@github.com:ianmseddy/LandR_reforestation.git"]
+	path = git@github.com:ianmseddy/LandR_reforestation.git
+	url = ianmseddy/LandR_reforestation
