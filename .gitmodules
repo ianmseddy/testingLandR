@@ -31,3 +31,6 @@
 [submodule "git@github.com:ianmseddy/LandR_reforestation.git"]
 	path = git@github.com:ianmseddy/LandR_reforestation.git
 	url = ianmseddy/LandR_reforestation
+[submodule "modules/assistedMigrationBC"]
+	path = modules/assistedMigrationBC
+	url = git@github.com:ianmseddy/assistedMigrationBC.git
