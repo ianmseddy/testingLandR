@@ -86,7 +86,7 @@ dataParams <- list(
   ),
   Biomass_core = list(
     sppEquivCol = 'LandR',
-    successionTimestep = 1,
+    successionTimestep = 10,
     .studyAreaName = studyAreaName,
     .plotInitialTime = NA,
     growthAndMortalityDrivers = "LandR"
@@ -125,7 +125,7 @@ dataParams <- list(
       )
   ),
   Biomass_regeneration = list(
-    successionTimestep = 1
+    successionTimestep = 10
   )
 )
 
@@ -140,7 +140,7 @@ dataObjects <- list(
 
 
 mySim <- simInit(
-  times = list(start = 2011, end = 2051),
+  times = list(start = 2011, end = 2021),
   modules = dataModules,
   objects = dataObjects,
   params = dataParams)
